@@ -4,6 +4,7 @@ gui.py — Главный интерфейс DoH DNS Manager в стиле Bucks
 (Ретро-индустриальный стиль: CRT-монитор с осциллографом, скайлайны, гильзы, терминал)
 """
 
+import os
 import sys
 import math
 import random
