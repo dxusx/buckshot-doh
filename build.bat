@@ -1,7 +1,7 @@
 @echo off
 setlocal EnableDelayedExpansion
 
-set EXE_NAME=Buckshot-DoH
+set EXE_NAME=Buckshot-DoH-v2.4
 set PYTHON=py -3.14 -m PyInstaller
 
 echo ============================================

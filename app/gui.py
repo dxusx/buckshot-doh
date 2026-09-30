@@ -20,6 +20,7 @@ import pystray
 
 from app.config import (
     APP_NAME, APP_VERSION, DOH_PROFILES, APP_DIR,
+    TG_CHANNEL, TG_SUPPORT_BOT, SITE_URL, DONATION_URL,
     load_settings, save_settings, get_active_profile,
 )
 from app.dns_backend import (
@@ -794,7 +795,49 @@ class DNSManagerApp:
             border_width=1,
             corner_radius=4,
             height=36,
-            command=lambda: webbrowser.open("https://t.me/xbox_dns"),
+            command=lambda: webbrowser.open(TG_CHANNEL),
+        ).pack(fill="x", padx=10, pady=(2, 6))
+
+        ctk.CTkButton(
+            scroll,
+            text="[ 🤖 ТЕХПОДДЕРЖКА: TELEGRAM @XBOX_DNS_SUPPORT_BOT ]",
+            font=ctk.CTkFont(family=FONT_TERM, size=11, weight="bold"),
+            fg_color=C_PANEL,
+            hover_color="#26241e",
+            text_color="#38bdf8",
+            border_color="#0369a1",
+            border_width=1,
+            corner_radius=4,
+            height=36,
+            command=lambda: webbrowser.open(TG_SUPPORT_BOT),
+        ).pack(fill="x", padx=10, pady=(2, 6))
+
+        ctk.CTkButton(
+            scroll,
+            text="[ 🌍 ОФИЦИАЛЬНЫЙ САЙТ XBOX-DNS.RU ]",
+            font=ctk.CTkFont(family=FONT_TERM, size=11, weight="bold"),
+            fg_color=C_PANEL,
+            hover_color="#26241e",
+            text_color="#a3e635",
+            border_color="#4d7c0f",
+            border_width=1,
+            corner_radius=4,
+            height=36,
+            command=lambda: webbrowser.open(SITE_URL),
+        ).pack(fill="x", padx=10, pady=(2, 6))
+
+        ctk.CTkButton(
+            scroll,
+            text="[ ☕ ПОДДЕРЖАТЬ ПРОЕКТ XBOX DNS ]",
+            font=ctk.CTkFont(family=FONT_TERM, size=11, weight="bold"),
+            fg_color=C_PANEL,
+            hover_color="#26241e",
+            text_color="#f59e0b",
+            border_color="#b45309",
+            border_width=1,
+            corner_radius=4,
+            height=36,
+            command=lambda: webbrowser.open(DONATION_URL),
         ).pack(fill="x", padx=10, pady=(2, 10))
 
         # Футер

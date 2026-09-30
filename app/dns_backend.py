@@ -46,7 +46,25 @@ class DnsproxyManager:
     # ── Загрузка ──────────────────────────────────────────────────────────────
 
     def ensure_dnsproxy(self, progress_cb=None) -> bool:
-        """Скачивает dnsproxy, если его нет. progress_cb(0..1, message)."""
+        """Скачивает dnsproxy или копирует встроенный, если его нет. progress_cb(0..1, message)."""
+        # Сначала проверяем встроенный бинарник (из дистрибутива PyInstaller или app/bin)
+        bundled_candidates = [
+            Path(getattr(sys, "_MEIPASS", "")) / "app" / "bin" / "dnsproxy.exe",
+            Path(__file__).resolve().parent / "bin" / "dnsproxy.exe",
+        ]
+        bundled_exe = next((p for p in bundled_candidates if p.is_file()), None)
+
+        if not DNSPROXY_EXE.exists() and bundled_exe:
+            try:
+                logger.info("Копирование встроенного dnsproxy.exe из %s -> %s", bundled_exe, DNSPROXY_EXE)
+                import shutil
+                shutil.copy2(bundled_exe, DNSPROXY_EXE)
+                if progress_cb:
+                    progress_cb(1.0, "Встроенный модуль dnsproxy готов")
+                return True
+            except Exception as exc:
+                logger.warning("Не удалось скопировать встроенный dnsproxy: %s", exc)
+
         if DNSPROXY_EXE.exists():
             logger.info("dnsproxy.exe найден: %s", DNSPROXY_EXE)
             return True
@@ -926,7 +944,7 @@ class SystemDiagnostics:
             lines.append(f"    |-- BOOTSTRAP DNS {b_ip}: {status}")
 
         # 7. Сквозное разрешение доменов
-        test_domains = ["xbox.com", "login.live.com", "google.com"]
+        test_domains = ["xbox.com", "login.live.com", "chatgpt.com", "google.com"]
         lines.append("* СКВОЗНОЕ ТЕСТИРОВАНИЕ РЕЗОЛВИНГА:")
         for dom in test_domains:
             try:
