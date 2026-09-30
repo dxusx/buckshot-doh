@@ -130,6 +130,6 @@ def get_active_profile(settings: dict) -> dict:
     return profile
 
 
-APP_VERSION = "2.4.1"
+APP_VERSION = "2.4.2"
 APP_NAME = "DoH DNS Manager"
 GITHUB_API = "https://api.github.com/repos/AdguardTeam/dnsproxy/releases/latest"

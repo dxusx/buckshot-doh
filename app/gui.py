@@ -27,6 +27,7 @@ from app.config import (
 from app.dns_backend import (
     DnsproxyManager, NetworkManager,
     set_autostart, is_autostart_enabled,
+    get_canonical_exe_path, get_autostart_target,
     measure_ping, measure_dns_latency,
     SystemDiagnostics,
 )
@@ -328,11 +329,23 @@ class DNSManagerApp:
         # Автоматическое самовосстановление сети при обнаружении сбоя от предыдущего запуска
         self._network.check_and_repair_on_startup()
 
-        # Синхронизация состояния автозапуска с системой
-        real_autostart = is_autostart_enabled()
-        if real_autostart != self.settings.get("autostart"):
-            self.settings["autostart"] = real_autostart
-            self._save_settings()
+        # Автоматическая синхронизация и самовосстановление автозапуска с Windows
+        if self.settings.get("autostart", False):
+            canonical_target = get_canonical_exe_path() if getattr(sys, "frozen", False) else sys.executable
+            current_target = get_autostart_target()
+            needs_repair = False
+            if not is_autostart_enabled():
+                needs_repair = True
+            elif current_target and os.path.normpath(current_target).lower() != os.path.normpath(canonical_target).lower():
+                needs_repair = True
+
+            if needs_repair:
+                logger.info("Автозапуск включен в настройках: выполняем самовосстановление задачи в Планировщике...")
+                ok, msg = set_autostart(True)
+                logger.info("Результат автовосстановления автозапуска: %s (%s)", ok, msg)
+        else:
+            if is_autostart_enabled():
+                set_autostart(False)
 
         self._tray: pystray.Icon | None = None
         self._tray_thread: threading.Thread | None = None

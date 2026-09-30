@@ -585,21 +585,68 @@ class NetworkManager:
 # -----------------------------------------------------------------------------
 
 TASK_NAME = "BuckshotDoH_Autostart"
+CANONICAL_EXE = APP_DIR / "Buckshot-DoH.exe"
 
 
-def is_autostart_enabled() -> bool:
-    """Проверяет, зарегистрирована ли задача автозапуска в Планировщике Windows."""
+def get_canonical_exe_path() -> str:
+    """
+    Возвращает постоянный, канонический путь к исполняемому файлу программы.
+    Для скомпилированного EXE копирует текущий файл в %LOCALAPPDATA%\\DoH-DNS-Manager\\Buckshot-DoH.exe,
+    чтобы автозапуск никогда не ломался при удалении или перемещении файлов из Downloads/Desktop/dist.
+    """
+    if getattr(sys, "frozen", False):
+        src = Path(sys.executable).resolve()
+        dest = CANONICAL_EXE.resolve()
+        if src != dest and src.is_file():
+            try:
+                import shutil
+                if dest.exists():
+                    old_path = dest.with_suffix(".old")
+                    try:
+                        old_path.unlink(missing_ok=True)
+                        dest.rename(old_path)
+                    except Exception:
+                        pass
+                shutil.copy2(src, dest)
+                logger.info("Исполняемый файл синхронизирован в постоянную директорию: %s -> %s", src, dest)
+            except Exception as exc:
+                logger.warning("Не удалось скопировать EXE в каноническую директорию: %s", exc)
+                return str(src)
+        return str(dest) if dest.is_file() else str(src)
+    return sys.executable
+
+
+def get_autostart_target() -> str | None:
+    """Извлекает путь исполняемого файла из зарегистрированной задачи в Планировщике Windows."""
     try:
         r = subprocess.run(
-            ["schtasks", "/Query", "/TN", TASK_NAME],
+            ["schtasks", "/Query", "/TN", TASK_NAME, "/XML"],
             capture_output=True,
             timeout=5,
+            encoding="cp866",
+            errors="replace",
             creationflags=subprocess.CREATE_NO_WINDOW,
         )
         if r.returncode == 0:
-            return True
+            import re
+            m = re.search(r"<Command>(.*?)</Command>", r.stdout)
+            if m:
+                return m.group(1).strip(' "')
     except Exception:
         pass
+    return None
+
+
+def is_autostart_enabled() -> bool:
+    """
+    Проверяет, зарегистрирована ли задача автозапуска И существует ли файл, на который она указывает.
+    """
+    target = get_autostart_target()
+    if target:
+        if Path(target).is_file():
+            return True
+        logger.warning("Задача автозапуска найдена, но целевой файл не существует: %s", target)
+        return False
 
     # Fallback: проверка в реестре
     try:
@@ -609,9 +656,10 @@ def is_autostart_enabled() -> bool:
             0, winreg.KEY_READ,
         )
         try:
-            winreg.QueryValueEx(key, APP_NAME)
+            val, _ = winreg.QueryValueEx(key, APP_NAME)
             winreg.CloseKey(key)
-            return True
+            if val and Path(val.strip(' "').split(" ")[0]).is_file():
+                return True
         except FileNotFoundError:
             winreg.CloseKey(key)
     except Exception:
@@ -657,16 +705,19 @@ def set_autostart(enabled: bool, exe_path: str | None = None) -> tuple[bool, str
             logger.error("Ошибка при удалении задачи автозапуска: %s", exc)
             return False, f"Ошибка при удалении автозапуска: {exc}"
 
-    # 2. Определение пути исполняемого файла и аргументов
+    # 2. Определение пути исполняемого файла, аргументов и рабочей директории
     if exe_path:
         target_exe = exe_path
         target_args = "--autostart"
+        working_dir = str(Path(exe_path).parent)
     elif getattr(sys, "frozen", False):
-        target_exe = sys.executable
+        target_exe = get_canonical_exe_path()
         target_args = "--autostart"
+        working_dir = str(APP_DIR)
     else:
         target_exe = sys.executable
         target_args = f'"{os.path.abspath(sys.argv[0])}" --autostart'
+        working_dir = str(Path(os.path.abspath(sys.argv[0])).parent)
 
     # 3. Получение SID текущего пользователя для интерактивной сессии
     user_sid = None
@@ -703,6 +754,7 @@ def set_autostart(enabled: bool, exe_path: str | None = None) -> tuple[bool, str
     # - Работу от батареи на ноутбуках
     # - Отсутствие лимита времени (PT0S)
     # - Наивысшие права без UAC (HighestAvailable)
+    # - Явную рабочую директорию (WorkingDirectory)
     xml_task = f"""<?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <RegistrationInfo>
@@ -741,6 +793,7 @@ def set_autostart(enabled: bool, exe_path: str | None = None) -> tuple[bool, str
     <Exec>
       <Command>{target_exe}</Command>
       <Arguments>{target_args}</Arguments>
+      <WorkingDirectory>{working_dir}</WorkingDirectory>
     </Exec>
   </Actions>
 </Task>"""
@@ -847,7 +900,13 @@ class SystemDiagnostics:
         lines.append(f"* СИСТЕМА: Windows | {adm_tag}")
 
         auto_on = is_autostart_enabled()
-        auto_tag = f"[OK] АКТИВЕН (Планировщик: {TASK_NAME}, HighestAvailable)" if auto_on else "[ВЫКЛ] Отключен"
+        target_file = get_autostart_target()
+        if auto_on and target_file:
+            auto_tag = f"[OK] АКТИВЕН ({Path(target_file).name}, HighestAvailable)"
+        elif target_file and not Path(target_file).is_file():
+            auto_tag = f"[ОШИБКА] ФАЙЛ НЕ НАЙДЕН: {Path(target_file).name}"
+        else:
+            auto_tag = "[ВЫКЛ] Отключен"
         lines.append(f"* АВТОЗАПУСК WINDOWS: {auto_tag}")
 
         # 2. Сетевой адаптер
