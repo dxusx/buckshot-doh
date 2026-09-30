@@ -19,6 +19,8 @@ TG_CHANNEL = "https://t.me/xbox_dns"
 TG_SUPPORT_BOT = "https://t.me/xbox_dns_support_bot"
 SITE_URL = "https://xbox-dns.ru"
 DONATION_URL = "https://pay.cloudtips.ru/p/17c9418a"
+GEOHIDE_SITE = "https://geohide.ru"
+GEOHIDE_TG = "https://t.me/Inter_net_Helper"
 
 # --- Известные DoH-профили ---
 DOH_PROFILES = [
@@ -27,6 +29,18 @@ DOH_PROFILES = [
         "url": "https://xbox-dns.ru/dns-query",
         "bootstrap": "111.88.96.54, 111.88.96.55, 1.1.1.1",
         "check_url": "https://xbox-dns.ru/test",
+    },
+    {
+        "name": "GeoHide DNS (RU)",
+        "url": "https://geohide.ru/dns-query",
+        "bootstrap": "193.233.112.67, 193.233.112.68, 46.8.158.6, 1.1.1.1",
+        "check_url": "https://geohide.ru",
+    },
+    {
+        "name": "GeoHide DNS (US)",
+        "url": "https://us.geohide.ru/dns-query",
+        "bootstrap": "192.255.159.240, 192.255.159.241, 1.1.1.1",
+        "check_url": "https://geohide.ru",
     },
     {
         "name": "Cloudflare",
@@ -116,6 +130,6 @@ def get_active_profile(settings: dict) -> dict:
     return profile
 
 
-APP_VERSION = "2.4.0"
+APP_VERSION = "2.4.1"
 APP_NAME = "DoH DNS Manager"
 GITHUB_API = "https://api.github.com/repos/AdguardTeam/dnsproxy/releases/latest"

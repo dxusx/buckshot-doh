@@ -944,7 +944,7 @@ class SystemDiagnostics:
             lines.append(f"    |-- BOOTSTRAP DNS {b_ip}: {status}")
 
         # 7. Сквозное разрешение доменов
-        test_domains = ["xbox.com", "login.live.com", "chatgpt.com", "google.com"]
+        test_domains = ["xbox.com", "login.live.com", "chatgpt.com", "notion.so", "google.com"]
         lines.append("* СКВОЗНОЕ ТЕСТИРОВАНИЕ РЕЗОЛВИНГА:")
         for dom in test_domains:
             try:

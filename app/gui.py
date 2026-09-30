@@ -21,6 +21,7 @@ import pystray
 from app.config import (
     APP_NAME, APP_VERSION, DOH_PROFILES, APP_DIR,
     TG_CHANNEL, TG_SUPPORT_BOT, SITE_URL, DONATION_URL,
+    GEOHIDE_SITE, GEOHIDE_TG,
     load_settings, save_settings, get_active_profile,
 )
 from app.dns_backend import (
@@ -824,6 +825,20 @@ class DNSManagerApp:
             corner_radius=4,
             height=36,
             command=lambda: webbrowser.open(SITE_URL),
+        ).pack(fill="x", padx=10, pady=(2, 6))
+
+        ctk.CTkButton(
+            scroll,
+            text="[ 🛡 GEOHIDE DNS: САЙТ И НАСТРОЙКИ (GEOHIDE.RU) ]",
+            font=ctk.CTkFont(family=FONT_TERM, size=11, weight="bold"),
+            fg_color=C_PANEL,
+            hover_color="#26241e",
+            text_color="#34d399",
+            border_color="#059669",
+            border_width=1,
+            corner_radius=4,
+            height=36,
+            command=lambda: webbrowser.open(GEOHIDE_SITE),
         ).pack(fill="x", padx=10, pady=(2, 6))
 
         ctk.CTkButton(
